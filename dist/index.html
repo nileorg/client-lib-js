@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="./bootstrap.min.css">
+	<link rel="stylesheet" href="./custom.css">
+	<title>Node Client</title>
+</head>
+<body>
+	<div id="app">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h1>Nodes</h1>
+				</div>
+				<div class="col-md-3 node-box-container" v-for="node in nodeList">
+					<div class="node-box">
+						Node id: <b>{{node.node_id}}</b><br>
+						Node name: <b>{{node.information.name}}</b><br>
+						Node ipfs hash: <b>{{node.ipfs_hash}}</b><br>
+						<button v-if="node.online" @click="loadNode(node.node_id)">LOAD NODE</button><br>
+						Components:
+						<div v-for="component in node.components">
+							<button v-if="component.type=='button'" @click="call(node, component.action, component.parameters)">{{component.label}}</button>
+							<div v-if="component.type=='output' && node.data">
+								{{node.data[component.key]}}
+							</div>
+							<input type="text" v-if="component.type=='text'" v-model="node.data[component.key]">
+						</div><br>
+						Data: 
+							{{node.data}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="./vue.js"></script>
+	<script src="./socket.io.js"></script>
+	<script src="./ipfs.min.js"></script>
+	<script src="./main.js"></script>
+	<script>
+		let client = null
+		var app = new Vue({
+			el: '#app',
+			data: {
+				nodeList: []
+			},
+			methods: {
+				loadNode(node_id) {
+					client.loadNode(node_id)
+				},
+				call(node, action, parameters) {
+					let call_parameters = {}
+					parameters.forEach(parameter=>{
+						call_parameters[parameter] = node.data[parameter]
+					})
+					client.call(node.ws_id, action, call_parameters)
+				}
+			}
+		})
+		const socket = io("http://localhost:3334")
+		const ipfs = new window.Ipfs({
+			config: {
+				Addresses: {
+					Swarm: [
+						'/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star'
+					]
+				}
+			}
+		})
+		socket.on('connect', () => {
+			ipfs.on('ready', () => {
+				client = new Client(socket, ipfs, "QmTzFkFVXPfkKndVJzVDh4xmsXEjXtn3YHszmqE4iauMjt")
+				client.on("initialized", (nodeList) => {
+					console.log("Node list initialized!")
+				})
+				client.on("nodeListUpdated", (nodeList) => {
+					nodeList = Object.values(nodeList)
+					app.nodeList = nodeList[0]
+				})
+				client.on('response', (r)=>{
+					console.log(r)
+				})
+			})
+		})
+	</script>
+</body>
+</html>
