@@ -70,9 +70,9 @@ var Client =
 
 const EventEmitter = __webpack_require__(1)
 
-module.exports = class Client extends EventEmitter{
+module.exports = class Client extends EventEmitter {
 	constructor(ws, ipfs, ipfs_hash) {
-		super()	
+		super()
 		this.ws = ws
 		this.ipfs = ipfs
 		this.ipfs_hash = ipfs_hash
@@ -112,12 +112,24 @@ module.exports = class Client extends EventEmitter{
 				nodeList: this.nodeListOnline
 			})
 		}
+		else if (request.action === "registered") {
+			this.token = request.parameters.token
+			this.emit("registered", {
+				token: this.token
+			})
+		}
+		else if (request.action === "logged") {
+			this.information = request.parameters.information
+			this.emit("logged", {
+				information: this.information
+			})
+		}
 	}
 	processNodeRequest(request) {
 		this.nodeListOnline = this.nodeListOnline.map((v) => {
-			if(request.sender === v.ws_id) {
-				if(request.content._key) {
-					if(v.data){
+			if (request.sender === v.ws_id) {
+				if (request.content._key) {
+					if (v.data) {
 						v.data[request.content._key] = request.content._data
 					}
 				}
@@ -138,7 +150,7 @@ module.exports = class Client extends EventEmitter{
 			node.components = nodeProperties.components
 			node.data = {}
 			node.components.forEach(v => {
-				if(v.key) {
+				if (v.key) {
 					node.data[v.key] = null
 				}
 			})
@@ -148,13 +160,44 @@ module.exports = class Client extends EventEmitter{
 			})
 		})
 	}
-	call(recipient, action, parameters) {
+	call(ws_id, action, parameters) {
 		this.ws.emit("client.to.instance", {
 			action: "forward",
-			recipient: recipient,
+			recipient: ws_id,
 			parameters: {
 				action: action,
 				parameters: parameters
+			}
+		})
+	}
+	queue(node_id, action, parameters) {
+		if (this.token) {
+			this.ws.emit("client.to.instance", {
+				action: "queue",
+				recipient: node_id,
+				token: this.token,
+				parameters: {
+					action: action,
+					parameters: parameters
+				}
+			})
+		}
+	}
+	register(information) {
+		this.information = information
+		this.ws.emit("client.to.instance", {
+			action: "register",
+			parameters: {
+				information: this.information
+			}
+		})
+	}
+	login(token) {
+		this.token = token
+		this.ws.emit("client.to.instance", {
+			action: "login",
+			parameters: {
+				token: this.token
 			}
 		})
 	}
