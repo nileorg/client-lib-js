@@ -15,22 +15,28 @@
 				<div class="col-md-12">
 					<h1>Nodes</h1>
 				</div>
-				<div class="col-md-3 node-box-container" v-for="node in nodeList">
-					<div class="node-box">
-						Node id: <b>{{node.node_id}}</b><br>
-						Node name: <b>{{node.information.name}}</b><br>
-						Node ipfs hash: <b>{{node.ipfs_hash}}</b><br>
-						<button v-if="node.online" @click="loadNode(node.node_id)">LOAD NODE</button><br>
-						Components:
-						<div v-for="component in node.components">
-							<button v-if="component.type=='button'" @click="call(node, component.action, component.parameters)">{{component.label}}</button>
-							<div v-if="component.type=='output' && node.data">
-								{{node.data[component.key]}}
+				<div class="col-md-3" v-for="node in nodeList">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">{{node.node_id}} - {{node.information.name}} <span v-if="node.online" class="badge badge-success">ONLINE</span></h5>
+							<p class="card-text">Located in {{node.information.location}}</p>
+						</div>
+						<ul class="list-group list-group-flush">
+							<li class="list-group-item"><b>IPFS HASH</b><br><input readonly class="form-control" v-model="node.ipfs_hash"></li>
+							<li class="list-group-item"><button class="btn btn-primary" @click="loadNode(node.node_id)">LOAD NODE</button><br></li>
+							<li class="list-group-item"><b>DATA</b><br>{{node.data}}</li>
+						</ul>
+						<div class="card-body">
+							<b>COMPONENTS</b>
+							<div v-for="component in node.components">
+								<hr>
+								<button class="btn btn-primary" v-if="component.type=='button'" @click="call(node, component.action, component.parameters)">{{component.label}}</button>
+								<div v-if="component.type=='output' && node.data">
+									{{node.data[component.key]}}
+								</div>
+								<input class="form-control" type="text" v-if="component.type=='text'" v-model="node.data[component.key]">
 							</div>
-							<input type="text" v-if="component.type=='text'" v-model="node.data[component.key]">
-						</div><br>
-						Data: 
-							{{node.data}}
+						</div>
 					</div>
 				</div>
 			</div>

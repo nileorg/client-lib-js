@@ -115,9 +115,11 @@ module.exports = class Client extends EventEmitter{
 	}
 	processNodeRequest(request) {
 		this.nodeListOnline = this.nodeListOnline.map((v) => {
-			if(request.content._key) {
-				if(v.data){
-					v.data[request.content._key] = request.content._data
+			if(request.sender === v.ws_id) {
+				if(request.content._key) {
+					if(v.data){
+						v.data[request.content._key] = request.content._data
+					}
 				}
 			}
 			return v
