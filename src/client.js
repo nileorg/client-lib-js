@@ -62,6 +62,11 @@ module.exports = class Client extends EventEmitter {
 				queue: this.queue
 			})
 		}
+		else if (request.action === "loginFailed") {
+			this.emit("loginFailed", {
+				msg: request.parameters.msg
+			})
+		}
 	}
 	processNodeRequest(request) {
 		this.nodeListOnline = this.nodeListOnline.map((v) => {

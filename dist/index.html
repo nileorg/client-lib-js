@@ -13,7 +13,7 @@
 		<div class="container">
 			<div class="row">
 				<div v-if="logged" class="col-md-12 text-center">
-					Welcome, {{information.name}}!
+					Welcome, {{information.name}}! <button @click="logout" class="btn btn-primary">LOGOUT</button>
 				</div>
 				<div v-if="!logged" class="col-md-3 offset-md-2 text-center">
 					<div class="form-group">
@@ -24,6 +24,7 @@
 				</div>
 				<div v-if="!logged" class="col-md-3 offset-md-1 text-center">
 					<div class="form-group">
+						<div v-if="login_error !== ''">{{login_error}}<br></div>
 						<label for="token">Token</label>
 						<input v-model="token" type="text" class="form-control" id="token" placeholder="Token">
 					</div>
@@ -100,7 +101,8 @@
 				information: {
 					name: ""
 				},
-				queue: []
+				queue: [],
+				login_error: ""
 			},
 			methods: {
 				loadNode(node_id) {
@@ -129,6 +131,7 @@
 				},
 				login() {
 					if(this.token) {
+						localStorage.setItem('token', app.token);
 						client.login(this.token)
 					}
 				},
@@ -139,6 +142,10 @@
 				},
 				processQueueRequest(request) {
 					client.processQueueRequest(request)
+				},
+				logout() {
+					client.token = ""
+					localStorage.setItem('token', '')
 				}
 			}
 		})
@@ -155,6 +162,10 @@
 				client = new Client(socket, ipfs, "QmTzFkFVXPfkKndVJzVDh4xmsXEjXtn3YHszmqE4iauMjt")
 				client.on("initialized", (nodeList) => {
 					console.log("Node list initialized!")
+					let token = localStorage.getItem('token')
+					if(token) {
+						client.login(token)
+					}
 				})
 				client.on("nodeListUpdated", (nodeList) => {
 					nodeList = Object.values(nodeList)
@@ -176,6 +187,9 @@
 				})
 				client.on('queueUpdated', r => {
 					app.queue = r.queue
+				})
+				client.on('loginFailed', r => {
+					app.login_error = r.msg
 				})
 			})
 		})
