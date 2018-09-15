@@ -120,8 +120,16 @@ module.exports = class Client extends EventEmitter {
 		}
 		else if (request.action === "logged") {
 			this.information = request.parameters.information
+			this.queue = request.parameters.queue
 			this.emit("logged", {
-				information: this.information
+				information: this.information,
+				queue: this.queue
+			})
+		}
+		else if (request.action === "updateQueue") {
+			this.queue = request.parameters.queue
+			this.emit("queueUpdated", {
+				queue: this.queue
 			})
 		}
 	}
@@ -142,21 +150,27 @@ module.exports = class Client extends EventEmitter {
 		this.emit("response", request)
 	}
 	loadNode(node_id) {
-		let node = this.nodeList.find(node => node.node_id === node_id)
-		let nodeString = ''
-		this.ipfs.files.get(node.ipfs_hash, (err, files) => {
-			files.forEach(file => { nodeString += file.content.toString() })
-			let nodeProperties = JSON.parse(nodeString)
-			node.components = nodeProperties.components
-			node.data = {}
-			node.components.forEach(v => {
-				if (v.key) {
-					node.data[v.key] = null
+		return new Promise((resolve, reject) => {
+			let node = this.nodeList.find(node => node.node_id === node_id)
+			let nodeString = ''
+			this.ipfs.files.get(node.ipfs_hash, (err, files) => {
+				if(err) {
+					reject(Error())
 				}
-			})
-			this.ws.emit("client.to.instance", { action: "updateNodeList" })
-			this.emit("nodeListUpdated", {
-				nodeList: this.nodeListOnline
+				files.forEach(file => { nodeString += file.content.toString() })
+				let nodeProperties = JSON.parse(nodeString)
+				node.components = nodeProperties.components
+				node.data = {}
+				node.components.forEach(v => {
+					if (v.key) {
+						node.data[v.key] = null
+					}
+				})
+				this.ws.emit("client.to.instance", { action: "updateNodeList" })
+				this.emit("nodeListUpdated", {
+					nodeList: this.nodeListOnline
+				})
+				resolve(node)
 			})
 		})
 	}
@@ -170,7 +184,7 @@ module.exports = class Client extends EventEmitter {
 			}
 		})
 	}
-	queue(node_id, action, parameters) {
+	addQueue(node_id, action, parameters) {
 		if (this.token) {
 			this.ws.emit("client.to.instance", {
 				action: "queue",
@@ -199,6 +213,30 @@ module.exports = class Client extends EventEmitter {
 			parameters: {
 				token: this.token
 			}
+		})
+	}
+	async processQueueRequest(request) {
+		this.loadNode(request.sender).then(()=>{
+			this.nodeListOnline = this.nodeListOnline.map((v) => {
+				if (request.sender === v.node_id) {
+					if (request.content._key) {
+						if (v.data) {
+							v.data[request.content._key] = request.content._data
+						}
+					}
+				}
+				return v
+			})
+			this.emit("nodeListUpdated", {
+				nodeList: this.nodeListOnline
+			})
+			this.ws.emit("client.to.instance", {
+				action: "processQueue",
+				parameters: {
+					queue_id: request.queue_id,
+				},
+				token: this.token
+			})
 		})
 	}
 }

@@ -12,19 +12,42 @@
 	<div id="app">
 		<div class="container">
 			<div class="row">
-				<div class="col-md-4 offset-md-4">
-					<div v-if="logged">Welcome, {{information.name}}!</div>
-					<div v-if="!logged">
-						<div class="form-group">
-							<label for="name">Name</label>
-							<input v-model="information.name" type="text" class="form-control" id="name" placeholder="Name">
+				<div v-if="logged" class="col-md-12 text-center">
+					Welcome, {{information.name}}!
+				</div>
+				<div v-if="!logged" class="col-md-3 offset-md-2 text-center">
+					<div class="form-group">
+						<label for="name">Name</label>
+						<input v-model="information.name" type="text" class="form-control" id="name" placeholder="Name">
+					</div>
+					<button @click="register" type="submit" class="btn btn-primary">REGISTER</button>
+				</div>
+				<div v-if="!logged" class="col-md-3 offset-md-1 text-center">
+					<div class="form-group">
+						<label for="token">Token</label>
+						<input v-model="token" type="text" class="form-control" id="token" placeholder="Token">
+					</div>
+					<button @click="login" type="submit" class="btn btn-primary">LOGIN</button>
+				</div>
+			</div>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h1>Queue</h1>
+				</div>
+				<div class="col-md-3" v-for="request in queue">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">{{request.queue_id}}</h5>
 						</div>
-						<button @click="register" type="submit" class="btn btn-primary">REGISTER</button>
-						<div class="form-group">
-							<label for="token">Token</label>
-							<input v-model="token" type="text" class="form-control" id="token" placeholder="Token">
+						<ul class="list-group list-group-flush">
+								<li class="list-group-item"><b>Sender: </b>{{request.sender}}</li>
+							<li class="list-group-item"><b>Content: </b>{{request.content}}</li>
+						</ul>
+						<div class="card-body">
+							<button class="btn btn-primary" @click="processQueueRequest(request)">PROCESS</button>
 						</div>
-						<button @click="login" type="submit" class="btn btn-primary">LOGIN</button>
 					</div>
 				</div>
 			</div>
@@ -76,7 +99,8 @@
 				token: "",
 				information: {
 					name: ""
-				}
+				},
+				queue: []
 			},
 			methods: {
 				loadNode(node_id) {
@@ -89,18 +113,18 @@
 					})
 					client.call(node.ws_id, action, call_parameters)
 				},
-				queue(node, action, parameters) {
+				addQueue(node, action, parameters) {
 					let call_parameters = {}
 					parameters.forEach(parameter=>{
 						call_parameters[parameter] = node.data[parameter]
 					})
-					client.queue(node.node_id, action, call_parameters)
+					client.addQueue(node.node_id, action, call_parameters)
 				},
 				request(node, action, parameters) {
 					if(node.online) {
 						this.call(node, action, parameters)
 					} else {
-						this.queue(node, action, parameters)
+						this.addQueue(node, action, parameters)
 					}
 				},
 				login() {
@@ -112,6 +136,9 @@
 					if(this.information) {
 						client.register(this.information)
 					}
+				},
+				processQueueRequest(request) {
+					client.processQueueRequest(request)
 				}
 			}
 		})
@@ -143,8 +170,12 @@
 				})
 				client.on('logged', r => {
 					app.information = r.information
+					app.queue = r.queue
 					app.logged = true
 					console.log('logged', r)
+				})
+				client.on('queueUpdated', r => {
+					app.queue = r.queue
 				})
 			})
 		})
