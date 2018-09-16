@@ -162,7 +162,11 @@
 		})
 		socket.on('connect', () => {
 			ipfs.on('ready', () => {
-				client = new Client(socket, ipfs, "QmTzFkFVXPfkKndVJzVDh4xmsXEjXtn3YHszmqE4iauMjt")
+				let ipfs_hash = localStorage.getItem('ipfs_hash')
+				if(!ipfs_hash) {
+					ipfs_hash = "QmTzFkFVXPfkKndVJzVDh4xmsXEjXtn3YHszmqE4iauMjt"
+				}
+				client = new Client(socket, ipfs, ipfs_hash)
 				client.on("initialized", (nodeList) => {
 					console.log("Node list initialized!")
 					let token = localStorage.getItem('token')
@@ -193,6 +197,11 @@
 				})
 				client.on('loginFailed', r => {
 					app.login_error = r.msg
+				})
+				client.on('ipnsUpdated', r => {
+					localStorage.setItem('ipfs_hash', r.ipfs)
+					client.ipfs_hash = r.ipfs
+					client.init()
 				})
 			})
 		})

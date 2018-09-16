@@ -67,6 +67,12 @@ module.exports = class Client extends EventEmitter {
 				msg: request.parameters.msg
 			})
 		}
+		else if (request.action === "updateIPNS") {
+			let ipns = request.parameters.ipns // ipns is still a work in progress
+			this.emit("ipnsUpdated", {
+				ipfs: request.parameters.ipfs
+			})
+		}
 	}
 	processNodeRequest(request) {
 		this.nodeListOnline = this.nodeListOnline.map((v) => {
