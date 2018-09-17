@@ -162,46 +162,45 @@
 		})
 		socket.on('connect', () => {
 			ipfs.on('ready', () => {
-				let ipfs_hash = localStorage.getItem('ipfs_hash')
-				if(!ipfs_hash) {
-					ipfs_hash = "QmTzFkFVXPfkKndVJzVDh4xmsXEjXtn3YHszmqE4iauMjt"
-				}
-				client = new Client(socket, ipfs, ipfs_hash)
-				client.on("initialized", (nodeList) => {
-					console.log("Node list initialized!")
-					let token = localStorage.getItem('token')
-					if(token) {
-						client.login(token)
-					}
-				})
-				client.on("nodeListUpdated", (nodeList) => {
-					nodeList = Object.values(nodeList)
-					app.nodeList = nodeList[0]
-				})
-				client.on('response', r => {
-					console.log(r)
-				})
-				client.on('registered', r => {
-					app.token = r.token
-					app.logged = true
-					console.log('registered', r)
-				})
-				client.on('logged', r => {
-					app.information = r.information
-					app.queue = r.queue
-					app.logged = true
-					console.log('logged', r)
-				})
-				client.on('queueUpdated', r => {
-					app.queue = r.queue
-				})
-				client.on('loginFailed', r => {
-					app.login_error = r.msg
-				})
-				client.on('ipnsUpdated', r => {
-					localStorage.setItem('ipfs_hash', r.ipfs)
-					client.ipfs_hash = r.ipfs
-					client.init()
+				fetch('http://localhost:3334')
+				.then((response)=>response.text())
+				.then(function(ipfs_hash) {
+					client = new Client(socket, ipfs, ipfs_hash)
+					client.on("initialized", (nodeList) => {
+						console.log("Node list initialized!")
+						let token = localStorage.getItem('token')
+						if(token) {
+							client.login(token)
+						}
+					})
+					client.on("nodeListUpdated", (nodeList) => {
+						nodeList = Object.values(nodeList)
+						app.nodeList = nodeList[0]
+					})
+					client.on('response', r => {
+						console.log(r)
+					})
+					client.on('registered', r => {
+						app.token = r.token
+						app.logged = true
+						console.log('registered', r)
+					})
+					client.on('logged', r => {
+						app.information = r.information
+						app.queue = r.queue
+						app.logged = true
+						console.log('logged', r)
+					})
+					client.on('queueUpdated', r => {
+						app.queue = r.queue
+					})
+					client.on('loginFailed', r => {
+						app.login_error = r.msg
+					})
+					client.on('ipnsUpdated', r => {
+						client.ipfs_hash = r.ipfs
+						client.init()
+					})
 				})
 			})
 		})
