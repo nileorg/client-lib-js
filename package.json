@@ -19,5 +19,10 @@
   "dependencies": {
     "ipfs": "^0.31.7",
     "socket.io-client": "^2.1.1"
+  },
+  "standard": {
+    "ignore": [
+      "**/*.min.js"
+    ]
   }
 }
