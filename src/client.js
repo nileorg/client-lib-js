@@ -152,27 +152,29 @@ module.exports = class Client extends EventEmitter {
     })
   }
   async processQueueRequest (request) {
-    this.loadNode(request.sender).then(() => {
-      this.nodeListOnline = this.nodeListOnline.map((v) => {
-        if (request.sender === v.node_id) {
-          if (request.content._key) {
-            if (v.data) {
-              v.data[request.content._key] = request.content._data
-            }
+    await this.loadNode(request.sender)
+    
+    this.nodeListOnline = this.nodeListOnline.map((v) => {
+      if (request.sender === v.node_id) {
+        if (request.content._key) {
+          if (v.data) {
+            v.data[request.content._key] = request.content._data
           }
         }
-        return v
-      })
-      this.emit('nodeListUpdated', {
-        nodeList: this.nodeListOnline
-      })
-      this.ws.emit('client.to.instance', {
-        action: 'processQueue',
-        parameters: {
-          queue_id: request.queue_id
-        },
-        token: this.token
-      })
+      }
+      return v
+    })
+    
+    this.emit('nodeListUpdated', {
+      nodeList: this.nodeListOnline
+    })
+    
+    this.ws.emit('client.to.instance', {
+      action: 'processQueue',
+      parameters: {
+        queue_id: request.queue_id
+      },
+      token: this.token
     })
   }
 }
