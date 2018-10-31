@@ -6,5 +6,6 @@ module.exports = {
     filename: 'main.min.js',
     library: 'Client',
     path: path.resolve(__dirname, 'dist')
-  }
+  },
+  watch: true,
 }

@@ -4,7 +4,7 @@
   "description": "The client is an application that offers the possibility to list and manage nodes and call the nodes actions",
   "main": "index.js",
   "scripts": {
-    "start": "node test.js"
+    "build": "webpack"
   },
   "repository": {
     "type": "git",
